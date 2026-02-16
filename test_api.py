@@ -44,7 +44,7 @@ class TestPlusEndpoint:
         data = response.json()
         assert data["service"] == "PLUS"
         assert data["asset_band"] == "A1"
-        # 50M is at the boundary of V1 (up to 50M), so it's V2
+        # 50M is the lower bound of V2 (V1 goes up to but not including 50M)
         assert data["process_band"] == "V2"
         assert "final_price" in data
     

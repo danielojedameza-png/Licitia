@@ -7,7 +7,7 @@ Defines all pricing tiers, bands, and constants for the 3-pillar architecture:
 """
 
 from enum import Enum
-from typing import Dict
+from typing import Dict, Any
 
 
 # Asset Bands (A0-A3)
@@ -92,7 +92,7 @@ PLUS_MINIMUM_BY_ASSETS: Dict[AssetBand, int] = {
 }
 
 # PLUS Pricing - Percentage by Process Value
-PLUS_PERCENTAGE_BY_VALUE: Dict[ProcessValueBand, Dict[str, any]] = {
+PLUS_PERCENTAGE_BY_VALUE: Dict[ProcessValueBand, Dict[str, Any]] = {
     ProcessValueBand.V1: {"percentage": 0.0008, "minimum": 19900},
     ProcessValueBand.V2: {"percentage": 0.0006, "minimum": None},
     ProcessValueBand.V3: {"percentage": 0.0005, "minimum": None},

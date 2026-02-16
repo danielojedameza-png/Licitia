@@ -1,6 +1,6 @@
 from fastapi import FastAPI, APIRouter, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 from models import (
     PricingRequest,
@@ -9,7 +9,8 @@ from models import (
     ProPricingResponse,
     PackagePricingResponse,
     CompleteQuoteResponse,
-    ErrorResponse
+    ErrorResponse,
+    UserTypeEnum
 )
 from pricing_calculator import (
     calculate_plus_price,
@@ -19,6 +20,25 @@ from pricing_calculator import (
     calculate_complete_quote
 )
 from pricing_config import UserType
+
+
+def _convert_user_type(user_type: Optional[UserTypeEnum]) -> UserType:
+    """
+    Convert Pydantic UserTypeEnum to pricing_config UserType.
+    
+    Args:
+        user_type: Optional UserTypeEnum from request
+        
+    Returns:
+        UserType enum value
+    """
+    if user_type is None:
+        return UserType.REGULAR
+    
+    try:
+        return UserType[user_type.value.upper()]
+    except (KeyError, AttributeError):
+        return UserType.REGULAR
 
 app = FastAPI(
     title="LicitIA - Hybrid Monetization API",
@@ -55,7 +75,7 @@ async def calculate_plus(request: PricingRequest):
     Formula: MAX(MinimumByAssets, PercentageOfProcessValue)
     """
     try:
-        user_type = UserType[request.user_type.value.upper()] if request.user_type else UserType.REGULAR
+        user_type = _convert_user_type(request.user_type)
         result = calculate_plus_price(
             assets=request.assets,
             process_value=request.process_value,
@@ -80,7 +100,7 @@ async def calculate_pro(request: PricingRequest):
     Ceiling: $1,490,000
     """
     try:
-        user_type = UserType[request.user_type.value.upper()] if request.user_type else UserType.REGULAR
+        user_type = _convert_user_type(request.user_type)
         result = calculate_pro_price(
             assets=request.assets,
             process_value=request.process_value,
@@ -142,7 +162,7 @@ async def get_complete_quote(
     Returns all available pricing options with recommendations.
     """
     try:
-        user_type = UserType[request.user_type.value.upper()] if request.user_type else UserType.REGULAR
+        user_type = _convert_user_type(request.user_type)
         result = calculate_complete_quote(
             assets=request.assets,
             process_value=request.process_value,

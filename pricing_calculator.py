@@ -22,6 +22,20 @@ from pricing_config import (
 )
 
 
+def _round_currency(value: float) -> int:
+    """
+    Round currency value to nearest integer.
+    Uses round() instead of int() to handle floating point precision issues.
+    
+    Args:
+        value: Float value to round
+        
+    Returns:
+        Rounded integer value
+    """
+    return int(round(value))
+
+
 def get_asset_band(assets: int) -> AssetBand:
     """
     Determine the asset band based on asset value.
@@ -85,7 +99,7 @@ def calculate_plus_price(
     
     # Calculate percentage-based price
     percentage_config = PLUS_PERCENTAGE_BY_VALUE[process_band]
-    percentage_price = int(process_value * percentage_config["percentage"])
+    percentage_price = _round_currency(process_value * percentage_config["percentage"])
     
     # Apply V1 minimum if specified
     if percentage_config["minimum"] is not None:
@@ -99,7 +113,7 @@ def calculate_plus_price(
     final_price = base_price
     
     if is_eligible_for_social_discount(user_type, asset_band, process_band):
-        discount_amount = int(base_price * SOCIAL_DISCOUNT["percentage"])
+        discount_amount = _round_currency(base_price * SOCIAL_DISCOUNT["percentage"])
         final_price = base_price - discount_amount
     
     return {
@@ -149,7 +163,7 @@ def calculate_pro_price(
     
     # Calculate percentage-based price
     percentage = PRO_PERCENTAGE_BY_VALUE[process_band]
-    percentage_price = int(process_value * percentage)
+    percentage_price = _round_currency(process_value * percentage)
     
     # Get the maximum between both
     base_price = max(minimum_by_assets, percentage_price)
@@ -180,7 +194,7 @@ def calculate_pro_price(
     final_price = price_before_discount
     
     if is_eligible_for_social_discount(user_type, asset_band, process_band):
-        discount_amount = int(price_before_discount * SOCIAL_DISCOUNT["percentage"])
+        discount_amount = _round_currency(price_before_discount * SOCIAL_DISCOUNT["percentage"])
         final_price = price_before_discount - discount_amount
     
     # Check if ceiling was exceeded
@@ -277,7 +291,7 @@ def calculate_package_discount(
     elif quantity >= PACKAGE_DISCOUNTS["pro_3_pack"]["quantity"]:
         discount_percentage = PACKAGE_DISCOUNTS["pro_3_pack"]["discount"]
     
-    discount_amount = int(total_without_discount * discount_percentage)
+    discount_amount = _round_currency(total_without_discount * discount_percentage)
     final_total = total_without_discount - discount_amount
     
     return {

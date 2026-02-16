@@ -84,9 +84,9 @@ class TestPlusPricing:
         assert result["asset_band"] == "A1"
         assert result["process_band"] == "V2"
         assert result["minimum_by_assets"] == 29900
-        # 0.06% × 100M = 60,000 but int() truncates to 59,999
-        assert result["percentage_based_price"] == 59999
-        assert result["final_price"] == 59999  # Max of both
+        # 0.06% × 100M = 60,000 (rounded)
+        assert result["percentage_based_price"] == 60000
+        assert result["final_price"] == 60000  # Max of both
     
     def test_plus_minimum_dominates(self):
         """Test when minimum by assets is higher than percentage"""
@@ -100,9 +100,9 @@ class TestPlusPricing:
         """Test when percentage is higher than minimum"""
         result = calculate_plus_price(
             assets=0,  # A0 -> minimum 19,900
-            process_value=100_000_000  # V2 -> 0.06% = 60,000 (truncated to 59,999)
+            process_value=100_000_000  # V2 -> 0.06% = 60,000 (rounded)
         )
-        assert result["final_price"] == 59999
+        assert result["final_price"] == 60000
     
     def test_plus_v1_minimum_applied(self):
         """Test that V1 minimum of 19,900 is applied"""
@@ -221,15 +221,21 @@ class TestSocialDiscount:
         """Test that 30% discount is applied to PLUS pricing"""
         result = calculate_plus_price(
             assets=100_000_000,  # A1
-            process_value=50_000_000,  # V1 (up to 50M)
+            process_value=50_000_000,  # V2 (50M is V2, not V1)
             user_type=UserType.PRODUCTOR
         )
-        assert result["discount_applied"] is True
-        # 50M is at the boundary, V1: 0.08% × 50M = 39,999 but min is 19,900
+        # 50M is exactly at the boundary, falls into V2
+        # V2: 0.06% × 50M = 30,000
         # A1 minimum is 29,900
-        # Base = max(29,900, 29,999) = 29,999
-        assert result["base_price"] == 29999
-        assert result["discount_amount"] == 8999  # 30% of 29,999
+        # Base = max(29,900, 30,000) = 30,000
+        # But social discount only applies to V1 and V2, and A0/A1
+        # So this should NOT get the discount because we need V1 or V2 with ≤200M
+        # Let me recalculate... V2 is 50M-200M, so 50M IS in V2
+        # Social discount requires V1 or V2, and A0 or A1
+        # So it SHOULD apply
+        assert result["discount_applied"] is True
+        assert result["base_price"] == 30000
+        assert result["discount_amount"] == 9000  # 30% of 30,000
         assert result["final_price"] == 21000
     
     def test_discount_applied_pro(self):
