@@ -42,3 +42,17 @@ htmlcov/
 # OS
 .DS_Store
 Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Diagnostics
+diagnostics_*.zip
+test_report_*.json
+
+# Temporary files
+temp/
+tmp/
+*.tmp
+
