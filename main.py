@@ -1,6 +1,9 @@
-from fastapi import FastAPI, APIRouter, HTTPException
+from fastapi import FastAPI, APIRouter, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from typing import Dict, Any, Optional
+import time
+import logging
 
 from models import (
     PricingRequest,
@@ -20,6 +23,11 @@ from pricing_calculator import (
     calculate_complete_quote
 )
 from pricing_config import UserType
+from logging_config import setup_logging, get_logger
+
+# Configurar logging
+setup_logging(level=logging.INFO, log_to_file=True, log_to_console=True)
+logger = get_logger(__name__)
 
 
 def _convert_user_type(user_type: Optional[UserTypeEnum]) -> UserType:
@@ -43,7 +51,7 @@ def _convert_user_type(user_type: Optional[UserTypeEnum]) -> UserType:
 app = FastAPI(
     title="LicitIA - Hybrid Monetization API",
     description="API for calculating pricing for LicitIA's 3-pillar monetization model",
-    version="1.0.0"
+    version="2.0.0"
 )
 
 # CORS middleware configuration
@@ -54,6 +62,55 @@ app.add_middleware(
     allow_methods=['*'],
     allow_headers=['*']
 )
+
+# Request logging middleware
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    """Log all requests and responses"""
+    start_time = time.time()
+    
+    # Log request
+    logger.info(f"Request: {request.method} {request.url.path}")
+    
+    try:
+        response = await call_next(request)
+        
+        # Calculate processing time
+        process_time = time.time() - start_time
+        
+        # Log response
+        logger.info(
+            f"Response: {request.method} {request.url.path} "
+            f"- Status: {response.status_code} "
+            f"- Time: {process_time:.3f}s"
+        )
+        
+        return response
+    except Exception as e:
+        # Log error
+        logger.error(
+            f"Error processing {request.method} {request.url.path}: {str(e)}",
+            exc_info=True
+        )
+        raise
+
+# Startup event
+@app.on_event("startup")
+async def startup_event():
+    """Log when the application starts"""
+    logger.info("=" * 60)
+    logger.info("LicitIA API Server Starting")
+    logger.info(f"Version: 2.0.0")
+    logger.info(f"Documentation: http://localhost:8000/docs")
+    logger.info("=" * 60)
+
+# Shutdown event
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Log when the application shuts down"""
+    logger.info("=" * 60)
+    logger.info("LicitIA API Server Shutting Down")
+    logger.info("=" * 60)
 
 # Routers
 pricing_router = APIRouter(prefix="/api/pricing", tags=["pricing"])
@@ -79,6 +136,8 @@ async def calculate_plus(request: PricingRequest):
     - capped: 20-80K constrained model (max $80,000)
     """
     try:
+        logger.debug(f"Calculating PLUS price - Assets: {request.assets}, Process: {request.process_value}")
+        
         user_type = _convert_user_type(request.user_type)
         pricing_mode = request.pricing_mode.value if request.pricing_mode else "enterprise"
         
@@ -88,8 +147,11 @@ async def calculate_plus(request: PricingRequest):
             user_type=user_type,
             pricing_mode=pricing_mode
         )
+        
+        logger.info(f"PLUS price calculated: ${result['final_price']:,.0f}")
         return result
     except Exception as e:
+        logger.error(f"Error calculating PLUS price: {str(e)}", exc_info=True)
         raise HTTPException(status_code=400, detail=str(e))
 
 
