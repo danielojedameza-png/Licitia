@@ -18,7 +18,10 @@ from pricing_config import (
     PRO_CEILING,
     SOCIAL_DISCOUNT,
     SUBSCRIPTION_PLANS,
-    PACKAGE_DISCOUNTS
+    PACKAGE_DISCOUNTS,
+    PRICING_MODE_CAPPED,
+    PRICING_MODE_ENTERPRISE,
+    CAPPED_CEILING
 )
 
 
@@ -76,7 +79,8 @@ def get_process_value_band(process_value: int) -> ProcessValueBand:
 def calculate_plus_price(
     assets: int,
     process_value: int,
-    user_type: UserType = UserType.REGULAR
+    user_type: UserType = UserType.REGULAR,
+    pricing_mode: str = PRICING_MODE_ENTERPRISE
 ) -> Dict[str, Any]:
     """
     Calculate PLUS tier pricing (quick validation).
@@ -87,6 +91,7 @@ def calculate_plus_price(
         assets: Asset value in COP (0 if not informed)
         process_value: Process value in COP
         user_type: Type of user for discount eligibility
+        pricing_mode: "enterprise" (full range) or "capped" (20-80K max)
         
     Returns:
         Dictionary with pricing breakdown
@@ -108,6 +113,11 @@ def calculate_plus_price(
     # Get the maximum between both
     base_price = max(minimum_by_assets, percentage_price)
     
+    # Apply capped ceiling if in capped mode
+    is_capped = pricing_mode == PRICING_MODE_CAPPED
+    if is_capped:
+        base_price = min(base_price, CAPPED_CEILING)
+    
     # Check for social discount
     discount_amount = 0
     final_price = base_price
@@ -126,6 +136,8 @@ def calculate_plus_price(
         "discount_applied": discount_amount > 0,
         "discount_amount": discount_amount,
         "final_price": final_price,
+        "pricing_mode": pricing_mode,
+        "is_capped": is_capped,
         "breakdown": {
             "assets": assets,
             "process_value": process_value,
@@ -138,19 +150,21 @@ def calculate_pro_price(
     assets: int,
     process_value: int,
     num_annexes: int = 0,
-    user_type: UserType = UserType.REGULAR
+    user_type: UserType = UserType.REGULAR,
+    pricing_mode: str = PRICING_MODE_ENTERPRISE
 ) -> Dict[str, Any]:
     """
     Calculate PRO tier pricing (complete analysis).
     
     Formula: Price = MAX(MinimumByAssets, PercentageOfProcessValue) + AnnexesSurcharge
-    Ceiling: $1,490,000
+    Ceiling: $1,490,000 (enterprise mode) or $80,000 (capped mode)
     
     Args:
         assets: Asset value in COP (0 if not informed)
         process_value: Process value in COP
         num_annexes: Number of annex files (first 10 included)
         user_type: Type of user for discount eligibility
+        pricing_mode: "enterprise" (full range) or "capped" (20-80K max)
         
     Returns:
         Dictionary with pricing breakdown
@@ -186,8 +200,10 @@ def calculate_pro_price(
     # Total before ceiling and discount
     price_before_discount = base_price + annexes_surcharge
     
-    # Apply ceiling
-    price_before_discount = min(price_before_discount, PRO_CEILING)
+    # Apply ceiling based on pricing mode
+    ceiling = CAPPED_CEILING if pricing_mode == PRICING_MODE_CAPPED else PRO_CEILING
+    is_capped = pricing_mode == PRICING_MODE_CAPPED
+    price_before_discount = min(price_before_discount, ceiling)
     
     # Check for social discount
     discount_amount = 0
@@ -198,7 +214,7 @@ def calculate_pro_price(
         final_price = price_before_discount - discount_amount
     
     # Check if ceiling was exceeded
-    ceiling_exceeded = (base_price + annexes_surcharge) > PRO_CEILING
+    ceiling_exceeded = (base_price + annexes_surcharge) > ceiling
     
     return {
         "service": "PRO",
@@ -215,7 +231,9 @@ def calculate_pro_price(
         "discount_amount": discount_amount,
         "final_price": final_price,
         "ceiling_exceeded": ceiling_exceeded,
-        "ceiling_value": PRO_CEILING if ceiling_exceeded else None,
+        "ceiling_value": ceiling if ceiling_exceeded else None,
+        "pricing_mode": pricing_mode,
+        "is_capped": is_capped,
         "breakdown": {
             "assets": assets,
             "process_value": process_value,
@@ -321,7 +339,8 @@ def calculate_complete_quote(
     process_value: int,
     num_annexes: int = 0,
     user_type: UserType = UserType.REGULAR,
-    include_subscription: bool = True
+    include_subscription: bool = True,
+    pricing_mode: str = PRICING_MODE_ENTERPRISE
 ) -> Dict[str, Any]:
     """
     Calculate complete quote with PLUS, PRO, and subscription options.
@@ -332,17 +351,19 @@ def calculate_complete_quote(
         num_annexes: Number of annex files
         user_type: Type of user
         include_subscription: Whether to include subscription plans
+        pricing_mode: "enterprise" (full range) or "capped" (20-80K max)
         
     Returns:
         Complete quote with all options
     """
-    plus_pricing = calculate_plus_price(assets, process_value, user_type)
-    pro_pricing = calculate_pro_price(assets, process_value, num_annexes, user_type)
+    plus_pricing = calculate_plus_price(assets, process_value, user_type, pricing_mode)
+    pro_pricing = calculate_pro_price(assets, process_value, num_annexes, user_type, pricing_mode)
     
     result = {
         "plus": plus_pricing,
         "pro": pro_pricing,
-        "recommendation": "PRO" if num_annexes > 0 or process_value > 200_000_000 else "PLUS"
+        "recommendation": "PRO" if num_annexes > 0 or process_value > 200_000_000 else "PLUS",
+        "pricing_mode": pricing_mode
     }
     
     if include_subscription:

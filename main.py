@@ -73,13 +73,20 @@ async def calculate_plus(request: PricingRequest):
     - Quick fit assessment
     
     Formula: MAX(MinimumByAssets, PercentageOfProcessValue)
+    
+    Pricing Modes:
+    - enterprise: Full range (default, no cap)
+    - capped: 20-80K constrained model (max $80,000)
     """
     try:
         user_type = _convert_user_type(request.user_type)
+        pricing_mode = request.pricing_mode.value if request.pricing_mode else "enterprise"
+        
         result = calculate_plus_price(
             assets=request.assets,
             process_value=request.process_value,
-            user_type=user_type
+            user_type=user_type,
+            pricing_mode=pricing_mode
         )
         return result
     except Exception as e:
@@ -97,15 +104,21 @@ async def calculate_pro(request: PricingRequest):
     - Document review
     
     Formula: MAX(MinimumByAssets, PercentageOfProcessValue) + AnnexesSurcharge
-    Ceiling: $1,490,000
+    
+    Ceilings:
+    - enterprise mode: $1,490,000
+    - capped mode: $80,000
     """
     try:
         user_type = _convert_user_type(request.user_type)
+        pricing_mode = request.pricing_mode.value if request.pricing_mode else "enterprise"
+        
         result = calculate_pro_price(
             assets=request.assets,
             process_value=request.process_value,
             num_annexes=request.num_annexes,
-            user_type=user_type
+            user_type=user_type,
+            pricing_mode=pricing_mode
         )
         return result
     except Exception as e:
@@ -160,15 +173,22 @@ async def get_complete_quote(
     Get complete pricing quote with PLUS, PRO, and subscription options.
     
     Returns all available pricing options with recommendations.
+    
+    Pricing Modes:
+    - enterprise: Full range (default)
+    - capped: 20-80K constrained model
     """
     try:
         user_type = _convert_user_type(request.user_type)
+        pricing_mode = request.pricing_mode.value if request.pricing_mode else "enterprise"
+        
         result = calculate_complete_quote(
             assets=request.assets,
             process_value=request.process_value,
             num_annexes=request.num_annexes,
             user_type=user_type,
-            include_subscription=include_subscription
+            include_subscription=include_subscription,
+            pricing_mode=pricing_mode
         )
         return result
     except Exception as e:

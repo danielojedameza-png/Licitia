@@ -147,6 +147,11 @@ TOKEN_LIMITS = {
     "pro": 3  # 3 AI calls
 }
 
+# Pricing Modes
+PRICING_MODE_CAPPED = "capped"  # 20-80K constrained model
+PRICING_MODE_ENTERPRISE = "enterprise"  # Full range model (default)
+CAPPED_CEILING = 80_000  # Maximum price in capped mode (COP)
+
 # Package Discounts
 PACKAGE_DISCOUNTS = {
     "pro_3_pack": {

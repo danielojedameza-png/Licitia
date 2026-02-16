@@ -7,6 +7,12 @@ from typing import Optional, List, Dict, Any
 from enum import Enum
 
 
+class PricingModeEnum(str, Enum):
+    """Pricing mode for calculation"""
+    capped = "capped"  # 20-80K constrained model
+    enterprise = "enterprise"  # Full range model
+
+
 class UserTypeEnum(str, Enum):
     """User type for social discount eligibility"""
     productor = "productor"
@@ -41,6 +47,10 @@ class PricingRequest(BaseModel):
     user_type: Optional[UserTypeEnum] = Field(
         UserTypeEnum.regular,
         description="User type for discount eligibility"
+    )
+    pricing_mode: Optional[PricingModeEnum] = Field(
+        PricingModeEnum.enterprise,
+        description="Pricing mode: 'capped' (20-80K max) or 'enterprise' (full range)"
     )
 
     @field_validator('assets')
@@ -94,6 +104,8 @@ class PlusPricingResponse(BaseModel):
     discount_applied: bool
     discount_amount: int
     final_price: int
+    pricing_mode: str
+    is_capped: bool
     breakdown: BreakdownModel
 
 
@@ -114,6 +126,8 @@ class ProPricingResponse(BaseModel):
     final_price: int
     ceiling_exceeded: bool
     ceiling_value: Optional[int]
+    pricing_mode: str
+    is_capped: bool
     breakdown: BreakdownModel
 
 
@@ -148,6 +162,7 @@ class CompleteQuoteResponse(BaseModel):
     plus: PlusPricingResponse
     pro: ProPricingResponse
     recommendation: str
+    pricing_mode: str
     subscription_plans: Optional[Dict[str, Any]] = None
 
 
