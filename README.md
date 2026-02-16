@@ -1,5 +1,7 @@
 # LicitIA - Complete Tender Analysis & Monetization Platform
 
+> **🇪🇸 ¿Hablas español?** → **[📖 INICIO_RAPIDO.md](INICIO_RAPIDO.md)** - Guía completa en español para empezar en 3 minutos
+
 ## Overview
 
 LicitIA is a **complete platform** that combines:
@@ -10,6 +12,21 @@ LicitIA is a **complete platform** that combines:
 The system analyzes tender documents (Chamber Certificate, RUT, Tender Notice), validates eligibility, calculates similarity scores, and provides instant pricing quotes - all in one unified platform.
 
 **Status**: ✅ Production Ready | 98/98 Tests Passing | Full Integration Complete
+
+---
+
+## 📚 Documentación en Español
+
+| Archivo | Descripción |
+|---------|-------------|
+| **[INICIO_RAPIDO.md](INICIO_RAPIDO.md)** | 🚀 Guía rápida para empezar en 3 minutos |
+| **[GUIA_INSTALACION.md](GUIA_INSTALACION.md)** | 📦 Instalación paso a paso detallada |
+| **[COMO_REPORTAR_ERRORES.md](COMO_REPORTAR_ERRORES.md)** | 🐛 Cómo reportar bugs efectivamente |
+| **[USAGE_EXAMPLES.md](USAGE_EXAMPLES.md)** | 💡 Ejemplos prácticos de uso |
+
+**Todos los archivos están en el directorio raíz del proyecto.**
+
+---
 
 ## 🚀 Quick Start
 
