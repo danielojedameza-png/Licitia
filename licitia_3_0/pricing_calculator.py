@@ -4,7 +4,7 @@ Implements all pricing calculation logic for PLUS and PRO tiers
 """
 
 from typing import Optional, Dict, Any
-from pricing_config import (
+from .pricing_config import (
     AssetBand,
     ProcessValueBand,
     UserType,

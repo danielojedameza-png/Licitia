@@ -54,7 +54,7 @@ def _convert_user_type(user_type: Optional[UserTypeEnum]) -> UserType:
 app = FastAPI(
     title="LicitIA - Hybrid Monetization API",
     description="API for calculating pricing for LicitIA's 3-pillar monetization model",
-    version="2.0.0"
+    version="3.0.0"
 )
 
 # CORS middleware configuration
@@ -103,7 +103,7 @@ async def startup_event():
     """Log when the application starts"""
     logger.info("=" * 60)
     logger.info("LicitIA API Server Starting")
-    logger.info(f"Version: 2.0.0")
+    logger.info(f"Version: 3.0.0")
     logger.info(f"Documentation: http://localhost:8000/docs")
     logger.info("=" * 60)
 
@@ -301,7 +301,7 @@ async def root():
     """Root endpoint with API information"""
     return {
         "service": "LicitIA Hybrid Monetization API",
-        "version": "1.0.0",
+        "version": "3.0.0",
         "documentation": "/docs",
         "endpoints": {
             "pricing": "/api/pricing",
